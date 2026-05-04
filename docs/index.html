@@ -1,0 +1,2347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>专业几何计算与绘图工具</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --primary: #007AFF;
+  --primary-light: #409CFF;
+  --primary-dark: #0062CC;
+  --success: #34C759;
+  --warning: #FF9500;
+  --danger: #FF3B30;
+  --bg: #F2F2F7;
+  --card: #FFFFFF;
+  --text: #1C1C1E;
+  --text-secondary: #8E8E93;
+  --text-tertiary: #C7C7CC;
+  --border: #E5E5EA;
+  --separator: #C6C6C8;
+  --tab-bg: #FFFFFF;
+  --tab-inactive: #8E8E93;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --font: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  -webkit-user-select: none;
+}
+input, select, textarea, button { font-family: var(--font); }
+input:focus, select:focus { outline:none; }
+button { cursor:pointer; border:none; background:none; }
+
+/* ===== Layout ===== */
+.app-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+.pages-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.page {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 90px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translateY(8px);
+}
+.page.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+.page-subtitle { font-size:13px; color:var(--text-secondary); margin-bottom:12px; }
+
+/* ===== Bottom Tab Bar (Mobile) ===== */
+.tab-bar {
+  display: flex;
+  background: var(--tab-bg);
+  border-top: 0.5px solid var(--separator);
+  padding: 4px 0 calc(4px + var(--safe-bottom));
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.92);
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--tab-inactive);
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.tab-item.active { color: var(--primary); }
+.tab-icon { font-size: 22px; line-height: 1; }
+.tab-label { font-weight: 500; }
+
+/* ===== PC Sidebar ===== */
+.sidebar {
+  display: none;
+}
+
+/* ===== Cards ===== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.card-desc { font-size:13px; color:var(--text-secondary); margin-bottom:12px; }
+
+/* ===== Form Elements ===== */
+.input-group { margin-bottom: 10px; }
+.input-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.input-group .label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.input-row .input-group { flex:1; min-width:60px; }
+input[type="number"], input[type="text"], select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: #F9F9F9;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--text);
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+input[type="number"]:focus, input[type="text"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0,122,255,0.12);
+  background: #fff;
+}
+select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238E8E93' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+
+/* ===== Tags / Chips ===== */
+.tag-group {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tag-group::-webkit-scrollbar { display:none; }
+.tag {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #E8E8ED;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tag.active {
+  background: var(--primary);
+  color: #fff;
+}
+.tag:hover:not(.active) { background: #D8D8DD; }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+  gap: 6px;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+}
+.btn-outline:hover { background: rgba(0,122,255,0.06); }
+.btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+.btn-xs { padding: 4px 8px; font-size: 11px; border-radius: 6px; }
+.btn-block { width: 100%; }
+.btn-icon { width: 36px; height: 36px; padding:0; border-radius: 8px; font-size:18px; }
+.btn-icon.btn-sm { width: 30px; height: 30px; font-size:14px; border-radius:6px; }
+
+/* ===== Badge ===== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-primary { background: rgba(0,122,255,0.12); color: var(--primary); }
+.badge-success { background: rgba(52,199,89,0.12); color: var(--success); }
+.badge-warning { background: rgba(255,149,0,0.12); color: var(--warning); }
+.badge-danger { background: rgba(255,59,48,0.12); color: var(--danger); }
+
+/* ===== Output ===== */
+.output-box {
+  background: #F2F2F7;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.output-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 0.5px solid rgba(0,0,0,0.04);
+}
+.output-item:last-child { border-bottom:none; }
+.output-label { color: var(--text-secondary); }
+.output-value { font-weight: 600; text-align:right; }
+
+/* ===== Quick Angle Buttons ===== */
+.quick-angles {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.quick-angle {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  background: #E8E8ED;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quick-angle:hover { background: #D0D0D5; }
+.quick-angle:active { background: var(--primary); color:#fff; }
+
+/* ===== Canvas Mini ===== */
+.mini-canvas {
+  border-radius: 8px;
+  background: #FAFAFA;
+  display: block;
+  margin: 8px auto;
+}
+
+/* ===== Color Picker ===== */
+.color-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+.color-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.color-dot:hover { transform: scale(1.1); }
+.color-dot.active { border-color: var(--text); box-shadow: 0 0 0 2px #fff; }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 20px 20px calc(20px + var(--safe-bottom));
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 85vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.modal-overlay.open .modal-sheet {
+  transform: translateY(0);
+}
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.modal-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 90%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  transition: transform 0.3s, opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+}
+.modal-overlay.open .modal-center {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-close {
+  position: absolute;
+  top: 12px; right: 16px;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  max-width: 80%;
+  text-align: center;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== Data Table ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th {
+  background: #F2F2F7;
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 6px;
+  text-align: center;
+  border-bottom: 0.5px solid var(--border);
+  font-size: 13px;
+}
+
+/* ===== Element List ===== */
+.element-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s;
+}
+.element-item:hover { transform: translateX(4px); }
+.element-icon { font-size: 24px; width: 32px; text-align:center; }
+.element-info { flex:1; min-width:0; }
+.element-name { font-weight:600; font-size:14px; }
+.element-desc { font-size:12px; color:var(--text-secondary); margin-top:1px; }
+.element-time { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+.element-actions { display:flex; gap:4px; flex-shrink:0; }
+
+/* ===== Canvas Page ===== */
+.canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 180px);
+  min-height: 300px;
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+#mainCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  background: #FAFAFA;
+}
+.canvas-toolbar {
+  position: absolute;
+  top: 8px; right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+.canvas-toolbar button {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 0.5px solid var(--border);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.canvas-toolbar button:hover { background: #fff; transform: scale(1.05); }
+.canvas-toolbar button:active { transform: scale(0.95); }
+.canvas-info {
+  position: absolute;
+  bottom: 8px; left: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Scrollbar ===== */
+.page::-webkit-scrollbar { width:4px; }
+.page::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius:2px; }
+
+/* ===== Divider ===== */
+.divider { height:0.5px; background:var(--separator); margin:12px 0; }
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity:0.5; }
+.empty-state .text { font-size: 16px; }
+
+/* ===== Responsive ===== */
+@media (min-width: 769px) {
+  .app-container {
+    max-width: 1200px;
+    flex-direction: row;
+    padding: 0;
+  }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 0.5px solid var(--separator);
+    padding: 20px 12px;
+    gap: 4px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+  .sidebar-title {
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    color: var(--primary);
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sidebar-item:hover { background: #E8E8ED; }
+  .sidebar-item.active { background: var(--primary); color: #fff; }
+  .sidebar-item .icon { font-size: 20px; width: 24px; text-align:center; }
+  .tab-bar { display: none; }
+  .pages-container {
+    flex: 1;
+    overflow: hidden;
+  }
+  .page {
+    padding: 24px 32px 32px;
+  }
+  .page:first-of-type.active { display:block; }
+  .card { padding: 20px; }
+  .modal-sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: var(--radius-xl);
+    bottom: auto;
+    top: auto;
+    margin-top: 10vh;
+  }
+  .modal-overlay.open .modal-sheet {
+    transform: translateX(-50%) translateY(0);
+  }
+  .canvas-wrapper {
+    height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hide-mobile { display:none !important; }
+}
+
+/* ===== Misc ===== */
+.flex-row { display:flex; gap:8px; align-items:center; }
+.flex-wrap { flex-wrap:wrap; }
+.gap-4 { gap:4px; }
+.gap-8 { gap:8px; }
+.mt-4 { margin-top:4px; }
+.mt-8 { margin-top:8px; }
+.mt-12 { margin-top:12px; }
+.mb-8 { margin-bottom:8px; }
+.mb-12 { margin-bottom:12px; }
+.text-center { text-align:center; }
+.text-secondary { color: var(--text-secondary); }
+.text-sm { font-size:13px; }
+.text-xs { font-size:11px; }
+.w-full { width:100%; }
+.flex-1 { flex:1; }
+.truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Special table styles for angle table */
+.special-table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+.special-table th {
+  background:#F2F2F7;
+  padding:6px 4px;
+  font-weight:600;
+  color:var(--text-secondary);
+  border-bottom:1px solid var(--border);
+  text-align:center;
+}
+.special-table td {
+  padding:5px 4px;
+  text-align:center;
+  border-bottom:0.5px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container" id="app">
+  <!-- Sidebar (PC) -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-title">📐 几何工具</div>
+    <div class="sidebar-item active" data-tab="0">
+      <span class="icon">🧮</span> 计算器
+    </div>
+    <div class="sidebar-item" data-tab="1">
+      <span class="icon">🎨</span> 画布
+    </div>
+    <div class="sidebar-item" data-tab="2">
+      <span class="icon">📦</span> 数据中心
+    </div>
+  </nav>
+
+  <!-- Pages Container -->
+  <div class="pages-container">
+    <!-- ===== PAGE 0: Calculator ===== -->
+    <div class="page active" id="page0">
+      <div class="page-title">计算器</div>
+      <!-- Categories Tags -->
+      <div class="tag-group" id="calcTags">
+        <div class="tag active" data-cat="0">坐标转换</div>
+        <div class="tag" data-cat="1">三角函数</div>
+        <div class="tag" data-cat="2">角度/弧度</div>
+        <div class="tag" data-cat="3">几何计算</div>
+      </div>
+
+      <!-- Category Content -->
+      <div id="calcContent">
+        <!-- Will be filled by JS -->
+      </div>
+    </div>
+
+    <!-- ===== PAGE 1: Canvas ===== -->
+    <div class="page" id="page1">
+      <div class="page-title">画布</div>
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="mainCanvas"></canvas>
+        <div class="canvas-toolbar">
+          <button id="btnAddElement" title="添加元素">➕</button>
+          <button id="btnFitView" title="适应视图">🔍</button>
+          <button id="btnZoomIn" title="放大">🔍+</button>
+          <button id="btnZoomOut" title="缩小">🔍−</button>
+          <button id="btnClearCanvas" title="清空">🗑</button>
+        </div>
+        <div class="canvas-info" id="canvasInfo">坐标: (0, 0) | 1.0x</div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE 2: Data Center ===== -->
+    <div class="page" id="page2">
+      <div class="page-title">数据中心</div>
+      <div class="flex-row mb-8" style="justify-content:space-between;">
+        <span class="badge badge-primary" id="elementCount">共 0 个元素</span>
+        <div class="flex-row gap-4">
+          <button class="btn btn-sm btn-outline" id="btnBatchAdd">📌 批量添加</button>
+          <button class="btn btn-sm btn-danger" id="btnClearAll">🗑 清空</button>
+        </div>
+      </div>
+      <div id="elementList">
+        <!-- Element items rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Tab Bar (Mobile) -->
+  <nav class="tab-bar" id="tabBar">
+    <div class="tab-item active" data-tab="0">
+      <span class="tab-icon">🧮</span>
+      <span class="tab-label">计算器</span>
+    </div>
+    <div class="tab-item" data-tab="1">
+      <span class="tab-icon">🎨</span>
+      <span class="tab-label">画布</span>
+    </div>
+    <div class="tab-item" data-tab="2">
+      <span class="tab-icon">📦</span>
+      <span class="tab-label">数据中心</span>
+    </div>
+  </nav>
+</div>
+
+<!-- ===== Modal Overlay ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-sheet" id="modalSheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">弹窗</div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ===== Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==========================================
+// ===== App State =====
+// ==========================================
+const AppState = {
+  elements: [],       // Data center elements
+  canvasElements: [], // Elements currently shown on canvas (references by id)
+  nextId: 1,
+  currentTab: 0,
+  currentCalcCat: 0,
+  canvasOffset: { x: 0, y: 0 },
+  canvasScale: 1,
+  isDragging: false,
+  dragStart: { x: 0, y: 0 },
+  offsetStart: { x: 0, y: 0 },
+  lastDist: 0,
+  pinchCenter: { x: 0, y: 0 },
+  isPinching: false,
+};
+
+// ==========================================
+// ===== Toast =====
+// ==========================================
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ==========================================
+// ===== Modal System =====
+// ==========================================
+function openModal(title, bodyHTML, isCenter = false) {
+  const overlay = document.getElementById('modalOverlay');
+  const sheet = document.getElementById('modalSheet');
+  const titleEl = document.getElementById('modalTitle');
+  const body = document.getElementById('modalBody');
+  if (isCenter) {
+    sheet.className = 'modal-center';
+  } else {
+    sheet.className = 'modal-sheet';
+  }
+  titleEl.textContent = title;
+  body.innerHTML = bodyHTML;
+  overlay.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ==========================================
+// ===== Navigation =====
+// ==========================================
+function switchTab(idx) {
+  AppState.currentTab = idx;
+  document.querySelectorAll('.page').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.tab-item').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.sidebar-item').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  if (idx === 1) {
+    renderCanvas();
+  }
+  if (idx === 2) {
+    renderDataCenter();
+  }
+}
+
+document.querySelectorAll('.tab-item, .sidebar-item').forEach(el => {
+  el.addEventListener('click', () => {
+    const idx = parseInt(el.dataset.tab);
+    switchTab(idx);
+  });
+});
+
+// ==========================================
+// ===== Calculator Categories =====
+// ==========================================
+const calcTags = document.getElementById('calcTags');
+calcTags.addEventListener('click', (e) => {
+  const tag = e.target.closest('.tag');
+  if (!tag) return;
+  calcTags.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  tag.classList.add('active');
+  AppState.currentCalcCat = parseInt(tag.dataset.cat);
+  renderCalcCategory();
+});
+
+// ==========================================
+// ===== Utility Functions =====
+// ==========================================
+function toRad(deg) { return deg * Math.PI / 180; }
+function toDeg(rad) { return rad * 180 / Math.PI; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function formatNum(v, decimals = 6) {
+  if (v === Infinity || v === -Infinity) return '∞';
+  if (isNaN(v)) return '—';
+  return parseFloat(v.toFixed(decimals));
+}
+function formatCoord(v) { return parseFloat(v.toFixed(4)); }
+
+function getElementById(id) {
+  return AppState.elements.find(e => e.id === id);
+}
+
+function getCanvasElementById(id) {
+  return AppState.canvasElements.find(e => e.id === id);
+}
+
+const COLORS = ['#007AFF','#34C759','#FF9500','#FF3B30','#AF52DE','#FF2D55','#5856D6','#8E8E93'];
+const COLOR_NAMES = ['蓝色','绿色','橙色','红色','紫色','粉色','靛蓝','灰色'];
+const TYPE_ICONS = { point:'📍', line:'📏', circle:'⭕', arc:'🌙', rect:'▭' };
+const TYPE_NAMES = { point:'点', line:'线', circle:'圆', arc:'圆弧', rect:'矩形' };
+
+function defaultColor() { return COLORS[0]; }
+
+function createElementData(type, params, name, color) {
+  const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#AF52DE','#FF2D55','#5856D6','#8E8E93'];
+  const colorNames = ['蓝色','绿色','橙色','红色','紫色','粉色','靛蓝','灰色'];
+  const typeIcons = {point:'📍',line:'📏',circle:'⭕',arc:'🌙',rect:'▭'};
+  const typeNames = {point:'点',line:'线',circle:'圆',arc:'圆弧',rect:'矩形'};
+  return {
+    id: AppState.nextId++,
+    type,
+    name: name || (typeNames[type] + (AppState.elements.filter(e=>e.type===type).length+1)),
+    params: params.slice(),
+    color: color || defaultColor(),
+    visible: true,
+    created: new Date().toLocaleString('zh-CN')
+  };
+}
+
+function addElement(type, params, name, color, addToCanvas = true) {
+  const el = createElementData(type, params, name, color);
+  AppState.elements.push(el);
+  if (addToCanvas) {
+    AppState.canvasElements.push(el.id);
+  }
+  renderDataCenter();
+  renderCanvas();
+  return el;
+}
+
+// ==========================================
+// ===== Render Calculator Category =====
+// ==========================================
+function renderCalcCategory() {
+  const container = document.getElementById('calcContent');
+  const cat = AppState.currentCalcCat;
+  switch(cat) {
+    case 0: container.innerHTML = renderCoordTransform(); break;
+    case 1: container.innerHTML = renderTrigonometry(); break;
+    case 2: container.innerHTML = renderAngleRadian(); break;
+    case 3: container.innerHTML = renderGeometry(); break;
+  }
+  // Bind oninput events after rendering
+  bindCalcEvents();
+}
+
+// ===== 0: Coordinate Transform =====
+function renderCoordTransform() {
+  return `
+    <div class="card">
+      <div class="card-title">XYZ → 极坐标</div>
+      <div class="input-row">
+        <div class="input-group"><label>X</label><input type="number" id="xy2p_x" step="any" value="0" oninput="calcXY2Polar()"></div>
+        <div class="input-group"><label>Y</label><input type="number" id="xy2p_y" step="any" value="0" oninput="calcXY2Polar()"></div>
+        <div class="input-group"><label>Z (选填)</label><input type="number" id="xy2p_z" step="any" oninput="calcXY2Polar()" style="width:80px"></div>
+      </div>
+      <div class="output-box" id="xy2pOutput">
+        <div class="output-item"><span class="output-label">半径 R</span><span class="output-value" id="xy2p_r">0</span></div>
+        <div class="output-item"><span class="output-label">角度 θ°</span><span class="output-value" id="xy2p_deg">0°</span></div>
+        <div class="output-item"><span class="output-label">弧度 θ rad</span><span class="output-value" id="xy2p_rad">0</span></div>
+        <div class="output-item"><span class="output-label">矢量方向</span><span class="output-value" id="xy2p_vec">(0, 0)</span></div>
+        <div class="output-item"><span class="output-label">象限</span><span class="output-value" id="xy2p_quad"><span class="badge badge-primary">原点</span></span></div>
+      </div>
+      <canvas id="polarCanvas" class="mini-canvas" width="240" height="240"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title">极坐标 → XYZ</div>
+      <div class="input-row">
+        <div class="input-group"><label>半径 R</label><input type="number" id="p2xy_r" step="any" value="1" oninput="calcPolar2XY()"></div>
+        <div class="input-group"><label>角度 θ°</label><input type="number" id="p2xy_deg" step="any" value="45" oninput="calcPolar2XY()"></div>
+        <div class="input-group"><label>Z (选填)</label><input type="number" id="p2xy_z" step="any" style="width:80px" oninput="calcPolar2XY()"></div>
+      </div>
+      <div class="output-box" id="p2xyOutput">
+        <div class="output-item"><span class="output-label">X</span><span class="output-value" id="p2xy_x">0.7071</span></div>
+        <div class="output-item"><span class="output-label">Y</span><span class="output-value" id="p2xy_y">0.7071</span></div>
+        <div class="output-item"><span class="output-label">矢量方向</span><span class="output-value" id="p2xy_vec">(0.7071, 0.7071)</span></div>
+        <div class="output-item"><span class="output-label">象限</span><span class="output-value" id="p2xy_quad"><span class="badge badge-primary">第一象限</span></span></div>
+      </div>
+    </div>
+  `;
+}
+
+function calcXY2Polar() {
+  const x = parseFloat(document.getElementById('xy2p_x').value) || 0;
+  const y = parseFloat(document.getElementById('xy2p_y').value) || 0;
+  const z = parseFloat(document.getElementById('xy2p_z').value) || 0;
+  const r = Math.sqrt(x*x + y*y);
+  let deg = toDeg(Math.atan2(y, x));
+  if (deg < 0) deg += 360;
+  const rad = toRad(deg);
+  const quad = getQuadrant(x, y);
+  document.getElementById('xy2p_r').textContent = formatNum(r, 6);
+  document.getElementById('xy2p_deg').textContent = formatNum(deg, 4) + '°';
+  document.getElementById('xy2p_rad').textContent = formatNum(rad, 6);
+  document.getElementById('xy2p_vec').textContent = `(${formatNum(x,4)}, ${formatNum(y,4)})`;
+  document.getElementById('xy2p_quad').innerHTML = quad;
+  drawPolarChart(x, y, r, deg);
+}
+
+function getQuadrant(x, y) {
+  if (x === 0 && y === 0) return '<span class="badge badge-primary">原点</span>';
+  if (y === 0) return '<span class="badge badge-warning">在X轴上</span>';
+  if (x === 0) return '<span class="badge badge-warning">在Y轴上</span>';
+  if (x > 0 && y > 0) return '<span class="badge badge-success">第一象限</span>';
+  if (x < 0 && y > 0) return '<span class="badge badge-warning">第二象限</span>';
+  if (x < 0 && y < 0) return '<span class="badge badge-danger">第三象限</span>';
+  return '<span class="badge badge-primary">第四象限</span>';
+}
+
+function drawPolarChart(x, y, r, deg) {
+  const canvas = document.getElementById('polarCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  const scale = Math.min(w, h) * 0.35;
+  ctx.clearRect(0,0,w,h);
+  // Grid
+  ctx.strokeStyle = '#E8E8ED'; ctx.lineWidth = 0.5;
+  for (let i = -4; i <= 4; i++) {
+    if (i === 0) continue;
+    ctx.beginPath(); ctx.moveTo(cx + i*(scale/4), 0); ctx.lineTo(cx + i*(scale/4), h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, cy + i*(scale/4)); ctx.lineTo(w, cy + i*(scale/4)); ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle = '#8E8E93'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+  // Arrows
+  ctx.fillStyle = '#8E8E93';
+  ctx.beginPath(); ctx.moveTo(w-6, cy); ctx.lineTo(w-12, cy-4); ctx.lineTo(w-12, cy+4); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx, 6); ctx.lineTo(cx-4, 12); ctx.lineTo(cx+4, 12); ctx.fill();
+  // Labels
+  ctx.fillStyle = '#8E8E93'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('X', w-12, cy-6);
+  ctx.fillText('Y', cx+8, 14);
+
+  if (r === 0) {
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = '#007AFF'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('原点', cx+6, cy+4);
+    return;
+  }
+  const px = cx + x/r * scale;
+  const py = cy - y/r * scale;
+  // Radius line
+  ctx.strokeStyle = 'rgba(0,122,255,0.3)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+  ctx.setLineDash([]);
+  // Angle arc
+  if (deg > 0 && deg < 360) {
+    ctx.strokeStyle = '#FF9500'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, scale*0.25, -toRad(deg), 0); ctx.stroke();
+    ctx.fillStyle = '#FF9500'; ctx.font = '10px sans-serif';
+    const arad = toRad(deg);
+    const lx = cx + scale*0.35*Math.cos(-arad/2);
+    const ly = cy + scale*0.35*Math.sin(-arad/2);
+    ctx.fillText(formatNum(deg,1)+'°', lx, ly+4);
+  }
+  // Point
+  ctx.fillStyle = '#FF3B30'; ctx.beginPath(); ctx.arc(px, py, 5, 0, 2*Math.PI); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 5, 0, 2*Math.PI); ctx.stroke();
+  ctx.fillStyle = '#1C1C1E'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(`(${formatNum(x,2)}, ${formatNum(y,2)})`, px+8, py+4);
+  // R label
+  ctx.fillStyle = '#007AFF'; ctx.font = '10px sans-serif';
+  const mx = (cx+px)/2, my = (cy+py)/2;
+  ctx.fillText('R='+formatNum(r,2), mx+4, my-4);
+}
+
+function calcPolar2XY() {
+  const r = parseFloat(document.getElementById('p2xy_r').value) || 0;
+  const deg = parseFloat(document.getElementById('p2xy_deg').value) || 0;
+  const z = parseFloat(document.getElementById('p2xy_z').value) || 0;
+  const rad = toRad(deg);
+  const x = r * Math.cos(rad);
+  const y = r * Math.sin(rad);
+  const quad = getQuadrant(x, y);
+  document.getElementById('p2xy_x').textContent = formatNum(x, 6);
+  document.getElementById('p2xy_y').textContent = formatNum(y, 6);
+  document.getElementById('p2xy_vec').textContent = `(${formatNum(x,4)}, ${formatNum(y,4)})`;
+  document.getElementById('p2xy_quad').innerHTML = quad;
+}
+
+// ===== 1: Trigonometry =====
+function renderTrigonometry() {
+  return `
+    <div class="card">
+      <div class="card-title">三角函数计算</div>
+      <div class="card-desc">输入数值，自动计算所有三角函数值</div>
+      <div class="input-row">
+        <div class="input-group" style="flex:2">
+          <label>数值</label>
+          <input type="number" id="trigVal" step="any" value="30" oninput="calcTrig()">
+        </div>
+        <div class="input-group" style="flex:1">
+          <label>单位</label>
+          <select id="trigUnit" onchange="calcTrig()">
+            <option value="deg">角度 °</option>
+            <option value="rad">弧度</option>
+          </select>
+        </div>
+      </div>
+      <div class="quick-angles" id="quickAngles">
+        <span class="quick-angle" data-v="0">0°</span>
+        <span class="quick-angle" data-v="30">30°</span>
+        <span class="quick-angle" data-v="45">45°</span>
+        <span class="quick-angle" data-v="60">60°</span>
+        <span class="quick-angle" data-v="90">90°</span>
+        <span class="quick-angle" data-v="180">180°</span>
+        <span class="quick-angle" data-v="270">270°</span>
+      </div>
+      <table class="data-table" id="trigTable">
+        <thead><tr><th>函数</th><th>值</th><th>弧度值</th></tr></thead>
+        <tbody id="trigTableBody">
+          <tr><td>sin</td><td id="trig_sin">0.500000</td><td id="trig_sin_rad">π/6</td></tr>
+          <tr><td>cos</td><td id="trig_cos">0.866025</td><td id="trig_cos_rad">π/3</td></tr>
+          <tr><td>tan</td><td id="trig_tan">0.577350</td><td id="trig_tan_rad">—</td></tr>
+          <tr><td>asin</td><td id="trig_asin">0.523599</td><td id="trig_asin_rad">—</td></tr>
+          <tr><td>acos</td><td id="trig_acos">1.047198</td><td id="trig_acos_rad">—</td></tr>
+          <tr><td>atan</td><td id="trig_atan">0.463648</td><td id="trig_atan_rad">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">直角三角形计算</div>
+      <div class="card-desc">输入任意两条边，自动计算第三条边和角度</div>
+      <div class="input-row">
+        <div class="input-group"><label>对边 a</label><input type="number" id="tri_a" step="any" oninput="calcTriangle()"></div>
+        <div class="input-group"><label>邻边 b</label><input type="number" id="tri_b" step="any" oninput="calcTriangle()"></div>
+        <div class="input-group"><label>斜边 c</label><input type="number" id="tri_c" step="any" oninput="calcTriangle()"></div>
+      </div>
+      <div class="output-box" id="triOutput">
+        <div class="output-item"><span class="output-label">对边 a</span><span class="output-value" id="tri_o_a">—</span></div>
+        <div class="output-item"><span class="output-label">邻边 b</span><span class="output-value" id="tri_o_b">—</span></div>
+        <div class="output-item"><span class="output-label">斜边 c</span><span class="output-value" id="tri_o_c">—</span></div>
+        <div class="output-item"><span class="output-label">角 A</span><span class="output-value" id="tri_o_A">—</span></div>
+        <div class="output-item"><span class="output-label">角 B</span><span class="output-value" id="tri_o_B">—</span></div>
+        <div class="output-item"><span class="output-label">角 C (直角)</span><span class="output-value" id="tri_o_C">90°</span></div>
+        <div class="output-item"><span class="output-label">面积</span><span class="output-value" id="tri_o_area">—</span></div>
+        <div class="output-item"><span class="output-label">周长</span><span class="output-value" id="tri_o_perim">—</span></div>
+      </div>
+      <canvas id="triCanvas" class="mini-canvas" width="560" height="400"></canvas>
+    </div>
+  `;
+}
+
+function calcTrig() {
+  const val = parseFloat(document.getElementById('trigVal').value) || 0;
+  const unit = document.getElementById('trigUnit').value;
+  let rad = unit === 'deg' ? toRad(val) : val;
+  let deg = unit === 'deg' ? val : toDeg(val);
+  const sinv = Math.sin(rad);
+  const cosv = Math.cos(rad);
+  const tanv = Math.tan(rad);
+  const asinv = Math.asin(clamp(sinv, -1, 1));
+  const acosv = Math.acos(clamp(cosv, -1, 1));
+  const atanv = Math.atan(val);
+  const fmt = (v) => formatNum(v, 6);
+  document.getElementById('trig_sin').textContent = fmt(sinv);
+  document.getElementById('trig_cos').textContent = fmt(cosv);
+  document.getElementById('trig_tan').textContent = Math.abs(cosv) < 1e-10 ? '∞' : fmt(tanv);
+  document.getElementById('trig_asin').textContent = fmt(asinv) + ' rad';
+  document.getElementById('trig_acos').textContent = fmt(acosv) + ' rad';
+  document.getElementById('trig_atan').textContent = fmt(atanv) + ' rad';
+  // Radian display
+  document.getElementById('trig_sin_rad').textContent = fmt(rad) + ' rad';
+  document.getElementById('trig_cos_rad').textContent = fmt(rad) + ' rad';
+  document.getElementById('trig_tan_rad').textContent = fmt(rad) + ' rad';
+  document.getElementById('trig_asin_rad').textContent = fmt(asinv) + ' rad';
+  document.getElementById('trig_acos_rad').textContent = fmt(acosv) + ' rad';
+  document.getElementById('trig_atan_rad').textContent = fmt(atanv) + ' rad';
+}
+
+// Quick angles
+document.addEventListener('click', (e) => {
+  const qa = e.target.closest('.quick-angle');
+  if (!qa) return;
+  const v = qa.dataset.v;
+  const inp = document.getElementById('trigVal');
+  if (inp) { inp.value = v; calcTrig(); }
+});
+
+function calcTriangle() {
+  const a = parseFloat(document.getElementById('tri_a').value) || 0;
+  const b = parseFloat(document.getElementById('tri_b').value) || 0;
+  const c = parseFloat(document.getElementById('tri_c').value) || 0;
+  let na = a, nb = b, nc = c;
+  let count = (a>0?1:0) + (b>0?1:0) + (c>0?1:0);
+  if (count < 2) return;
+  if (count === 3) {
+    // Validate right triangle
+    const sides = [a,b,c].sort((x,y)=>x-y);
+    if (Math.abs(sides[0]*sides[0] + sides[1]*sides[1] - sides[2]*sides[2]) > 0.001) {
+      showToast('输入的三边不构成直角三角形（勾股定理不成立）');
+      return;
+    }
+    na = a; nb = b; nc = c;
+  } else {
+    // Compute missing
+    if (a > 0 && b > 0) {
+      na = a; nb = b; nc = Math.sqrt(a*a + b*b);
+    } else if (a > 0 && c > 0) {
+      na = a; nc = c;
+      if (c > a) { nb = Math.sqrt(c*c - a*a); } else { showToast('斜边必须大于对边'); return; }
+    } else if (b > 0 && c > 0) {
+      nb = b; nc = c;
+      if (c > b) { na = Math.sqrt(c*c - b*b); } else { showToast('斜边必须大于邻边'); return; }
+    }
+  }
+  if (na <= 0 || nb <= 0 || nc <= 0) return;
+  const angleA = toDeg(Math.asin(na / nc));
+  const angleB = toDeg(Math.asin(nb / nc));
+  const area = 0.5 * na * nb;
+  const perim = na + nb + nc;
+  document.getElementById('tri_o_a').textContent = formatNum(na, 4);
+  document.getElementById('tri_o_b').textContent = formatNum(nb, 4);
+  document.getElementById('tri_o_c').textContent = formatNum(nc, 4);
+  document.getElementById('tri_o_A').textContent = formatNum(angleA, 2) + '°';
+  document.getElementById('tri_o_B').textContent = formatNum(angleB, 2) + '°';
+  document.getElementById('tri_o_C').textContent = '90°';
+  document.getElementById('tri_o_area').textContent = formatNum(area, 4);
+  document.getElementById('tri_o_perim').textContent = formatNum(perim, 4);
+  drawTriangle(na, nb, nc, angleA, angleB);
+}
+
+function drawTriangle(a, b, c, angleA, angleB) {
+  const canvas = document.getElementById('triCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const pad = 60;
+  const maxDim = Math.max(a, b);
+  const scale = Math.min((w - 2*pad) / maxDim, (h - 2*pad) / maxDim) * 0.8;
+  // Triangle: right angle at bottom-left, side b horizontal, side a vertical
+  const bx = pad, by = h - pad;
+  const ex = bx + b * scale, ey = by;
+  const tx = bx, ty = by - a * scale;
+  // Draw
+  ctx.strokeStyle = '#FF3B30'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke(); // side a (red)
+  ctx.strokeStyle = '#007AFF';
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(ex, ey); ctx.stroke(); // side b (blue)
+  ctx.strokeStyle = '#34C759';
+  ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(tx, ty); ctx.stroke(); // side c (green)
+  // Right angle mark
+  const rSize = 16;
+  ctx.strokeStyle = '#8E8E93'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(bx + rSize, by); ctx.lineTo(bx + rSize, by - rSize); ctx.lineTo(bx, by - rSize); ctx.stroke();
+  ctx.fillStyle = '#8E8E93'; ctx.font = '11px sans-serif';
+  ctx.fillText('C', bx - 18, by + 14);
+  // Labels on sides
+  ctx.fillStyle = '#FF3B30'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+  const amx = (bx+tx)/2 - 20, amy = (by+ty)/2;
+  ctx.fillText('a='+formatNum(a,2), amx, amy);
+  ctx.fillStyle = '#007AFF';
+  const bmx = (bx+ex)/2, bmy = (by+ey)/2 + 18;
+  ctx.fillText('b='+formatNum(b,2), bmx, bmy);
+  ctx.fillStyle = '#34C759';
+  const cmx = (ex+tx)/2 + 18, cmy = (ey+ty)/2;
+  ctx.fillText('c='+formatNum(c,2), cmx, cmy);
+  // Angle arcs
+  ctx.strokeStyle = '#FF9500'; ctx.lineWidth = 2;
+  const ar = 30;
+  ctx.beginPath(); ctx.arc(tx, ty, ar, -toRad(90), -toRad(90)+toRad(angleA)); ctx.stroke();
+  ctx.fillStyle = '#FF9500'; ctx.font = '12px sans-serif';
+  ctx.fillText('A='+formatNum(angleA,1)+'°', tx + ar + 6, ty - ar + 6);
+  ctx.strokeStyle = '#AF52DE';
+  ctx.beginPath(); ctx.arc(ex, ey, ar, Math.PI - toRad(angleB), Math.PI); ctx.stroke();
+  ctx.fillStyle = '#AF52DE';
+  ctx.fillText('B='+formatNum(angleB,1)+'°', ex - ar - 40, ey - ar + 6);
+  // Point dots
+  ctx.fillStyle = '#1C1C1E';
+  [[bx,by,'A'],[ex,ey,'B'],[tx,ty,'C']].forEach(([px,py,label]) => {
+    ctx.beginPath(); ctx.arc(px, py, 3, 0, 2*Math.PI); ctx.fill();
+  });
+}
+
+// ===== 2: Angle / Radian =====
+function renderAngleRadian() {
+  return `
+    <div class="card">
+      <div class="card-title">角度 ↔ 弧度转换</div>
+      <div class="input-row">
+        <div class="input-group"><label>角度 (°)</label><input type="number" id="a2r_deg" step="any" oninput="angleToRadian()"></div>
+        <div class="input-group"><label>弧度 (rad)</label><input type="number" id="a2r_rad" step="any" oninput="radianToAngle()"></div>
+      </div>
+      <div class="output-box">
+        <div class="output-item"><span class="output-label">角度 → 弧度</span><span class="output-value" id="a2r_out">—</span></div>
+        <div class="output-item"><span class="output-label">弧度 → 角度</span><span class="output-value" id="r2a_out">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">常用角度对照表</div>
+      <table class="special-table">
+        <thead><tr><th>角度°</th><th>弧度</th><th>sin</th><th>cos</th><th>tan</th></tr></thead>
+        <tbody>
+          <tr><td>0°</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+          <tr><td>30°</td><td>π/6</td><td>0.5</td><td>√3/2</td><td>√3/3</td></tr>
+          <tr><td>45°</td><td>π/4</td><td>√2/2</td><td>√2/2</td><td>1</td></tr>
+          <tr><td>60°</td><td>π/3</td><td>√3/2</td><td>0.5</td><td>√3</td></tr>
+          <tr><td>90°</td><td>π/2</td><td>1</td><td>0</td><td>∞</td></tr>
+          <tr><td>180°</td><td>π</td><td>0</td><td>-1</td><td>0</td></tr>
+          <tr><td>270°</td><td>3π/2</td><td>-1</td><td>0</td><td>∞</td></tr>
+          <tr><td>360°</td><td>2π</td><td>0</td><td>1</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">弧长与扇形计算</div>
+      <div class="input-row">
+        <div class="input-group"><label>半径 R</label><input type="number" id="arc_r" step="any" value="1" oninput="calcArcSector()"></div>
+        <div class="input-group"><label>角度 θ°</label><input type="number" id="arc_deg" step="any" value="60" oninput="calcArcSector()"></div>
+      </div>
+      <div class="output-box" id="arcOut">
+        <div class="output-item"><span class="output-label">弧长 L</span><span class="output-value" id="arc_L">1.0472</span></div>
+        <div class="output-item"><span class="output-label">扇形面积</span><span class="output-value" id="arc_area">0.5236</span></div>
+        <div class="output-item"><span class="output-label">弦长</span><span class="output-value" id="arc_chord">1.0000</span></div>
+        <div class="output-item"><span class="output-label">扇形周长</span><span class="output-value" id="arc_perim">3.0472</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function angleToRadian() {
+  const deg = parseFloat(document.getElementById('a2r_deg').value);
+  if (isNaN(deg)) { document.getElementById('a2r_out').textContent = '—'; return; }
+  document.getElementById('a2r_out').textContent = formatNum(toRad(deg), 6) + ' rad';
+  document.getElementById('a2r_rad').value = formatNum(toRad(deg), 6);
+}
+
+function radianToAngle() {
+  const rad = parseFloat(document.getElementById('a2r_rad').value);
+  if (isNaN(rad)) { document.getElementById('r2a_out').textContent = '—'; return; }
+  document.getElementById('r2a_out').textContent = formatNum(toDeg(rad), 4) + '°';
+  document.getElementById('a2r_deg').value = formatNum(toDeg(rad), 4);
+}
+
+function calcArcSector() {
+  const r = parseFloat(document.getElementById('arc_r').value) || 0;
+  const deg = parseFloat(document.getElementById('arc_deg').value) || 0;
+  const rad = toRad(deg);
+  const L = r * rad;
+  const area = 0.5 * r * r * rad;
+  const chord = 2 * r * Math.sin(rad/2);
+  const perim = 2 * r + L;
+  document.getElementById('arc_L').textContent = formatNum(L, 6);
+  document.getElementById('arc_area').textContent = formatNum(area, 6);
+  document.getElementById('arc_chord').textContent = formatNum(chord, 6);
+  document.getElementById('arc_perim').textContent = formatNum(perim, 6);
+}
+
+// ===== 3: Geometry =====
+function renderGeometry() {
+  const shapes = [
+    {v:'circle', l:'圆'},
+    {v:'sector', l:'扇形'},
+    {v:'triangle', l:'三角形（三边）'},
+    {v:'rectangle', l:'矩形'},
+    {v:'square', l:'正方形'},
+    {v:'trapezoid', l:'梯形'},
+    {v:'parallelogram', l:'平行四边形'},
+    {v:'sphere', l:'球体'},
+    {v:'cylinder', l:'圆柱体'},
+    {v:'cone', l:'圆锥体'},
+    {v:'ring', l:'圆环（环形）'}
+  ];
+  let opts = shapes.map(s => `<option value="${s.v}">${s.l}</option>`).join('');
+  return `
+    <div class="card">
+      <div class="card-title">几何计算</div>
+      <div class="input-group">
+        <label>选择图形</label>
+        <select id="shapeSelect" onchange="renderShapeInputs()">${opts}</select>
+      </div>
+      <div id="shapeInputs"></div>
+      <canvas id="shapeCanvas" class="mini-canvas" width="240" height="200"></canvas>
+      <div class="output-box" id="shapeOutput"></div>
+    </div>
+  `;
+}
+
+function renderShapeInputs() {
+  const sel = document.getElementById('shapeSelect').value;
+  const container = document.getElementById('shapeInputs');
+  const out = document.getElementById('shapeOutput');
+  const canvas = document.getElementById('shapeCanvas');
+  let html = '';
+  switch(sel) {
+    case 'circle':
+      html = `<div class="input-group"><label>半径 r</label><input type="number" id="geo_r" step="any" value="1" oninput="calcShape()"></div>`;
+      break;
+    case 'sector':
+      html = `<div class="input-row"><div class="input-group"><label>半径 r</label><input type="number" id="geo_r" step="any" value="1" oninput="calcShape()"></div><div class="input-group"><label>角度 θ°</label><input type="number" id="geo_deg" step="any" value="60" oninput="calcShape()"></div></div>`;
+      break;
+    case 'triangle':
+      html = `<div class="input-row"><div class="input-group"><label>边 a</label><input type="number" id="geo_a" step="any" value="3" oninput="calcShape()"></div><div class="input-group"><label>边 b</label><input type="number" id="geo_b" step="any" value="4" oninput="calcShape()"></div><div class="input-group"><label>边 c</label><input type="number" id="geo_c" step="any" value="5" oninput="calcShape()"></div></div>`;
+      break;
+    case 'rectangle':
+      html = `<div class="input-row"><div class="input-group"><label>长 L</label><input type="number" id="geo_L" step="any" value="4" oninput="calcShape()"></div><div class="input-group"><label>宽 W</label><input type="number" id="geo_W" step="any" value="3" oninput="calcShape()"></div></div>`;
+      break;
+    case 'square':
+      html = `<div class="input-group"><label>边长 a</label><input type="number" id="geo_a" step="any" value="1" oninput="calcShape()"></div>`;
+      break;
+    case 'trapezoid':
+      html = `<div class="input-row"><div class="input-group"><label>上底 a</label><input type="number" id="geo_a" step="any" value="2" oninput="calcShape()"></div><div class="input-group"><label>下底 b</label><input type="number" id="geo_b" step="any" value="4" oninput="calcShape()"></div><div class="input-group"><label>高 h</label><input type="number" id="geo_h" step="any" value="3" oninput="calcShape()"></div></div>`;
+      break;
+    case 'parallelogram':
+      html = `<div class="input-row"><div class="input-group"><label>底边 a</label><input type="number" id="geo_a" step="any" value="4" oninput="calcShape()"></div><div class="input-group"><label>高 h</label><input type="number" id="geo_h" step="any" value="3" oninput="calcShape()"></div><div class="input-group"><label>侧边 b</label><input type="number" id="geo_b" step="any" value="3.5" oninput="calcShape()"></div></div>`;
+      break;
+    case 'sphere':
+      html = `<div class="input-group"><label>半径 r</label><input type="number" id="geo_r" step="any" value="1" oninput="calcShape()"></div>`;
+      break;
+    case 'cylinder':
+      html = `<div class="input-row"><div class="input-group"><label>半径 r</label><input type="number" id="geo_r" step="any" value="1" oninput="calcShape()"></div><div class="input-group"><label>高 h</label><input type="number" id="geo_h" step="any" value="2" oninput="calcShape()"></div></div>`;
+      break;
+    case 'cone':
+      html = `<div class="input-row"><div class="input-group"><label>半径 r</label><input type="number" id="geo_r" step="any" value="1" oninput="calcShape()"></div><div class="input-group"><label>高 h</label><input type="number" id="geo_h" step="any" value="2" oninput="calcShape()"></div></div>`;
+      break;
+    case 'ring':
+      html = `<div class="input-row"><div class="input-group"><label>大半径 R</label><input type="number" id="geo_R" step="any" value="3" oninput="calcShape()"></div><div class="input-group"><label>小半径 r</label><input type="number" id="geo_r" step="any" value="1" oninput="calcShape()"></div></div>`;
+      break;
+  }
+  container.innerHTML = html;
+  calcShape();
+}
+
+function calcShape() {
+  const sel = document.getElementById('shapeSelect').value;
+  const out = document.getElementById('shapeOutput');
+  const canvas = document.getElementById('shapeCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  let result = '';
+  const drawLabel = (x, y, text, color='#1C1C1E') => {
+    ctx.fillStyle = color; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(text, x, y);
+  };
+  switch(sel) {
+    case 'circle': {
+      const r = parseFloat(document.getElementById('geo_r').value) || 0;
+      if (r <= 0) { out.innerHTML = '<div class="text-secondary">请输入有效半径</div>'; return; }
+      const area = Math.PI * r * r;
+      const circ = 2 * Math.PI * r;
+      const areaExact = (r*r === 1) ? 'π' : (r*r + 'π');
+      const circExact = (r === 1) ? '2π' : (2*r + 'π');
+      result = `<div class="output-item"><span class="output-label">面积 S</span><span class="output-value">${areaExact} = ${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">周长 C</span><span class="output-value">${circExact} = ${formatNum(circ,6)}</span></div>`;
+      // Draw circle
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(w/2, h/2, Math.min(w,h)*0.35, 0, 2*Math.PI); ctx.stroke();
+      ctx.fillStyle = '#007AFF'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('r='+formatNum(r,2), w/2 + Math.min(w,h)*0.35/2 + 16, h/2 + 4);
+      ctx.fillStyle = '#1C1C1E';
+      ctx.beginPath(); ctx.arc(w/2, h/2, 2, 0, 2*Math.PI); ctx.fill();
+      ctx.fillText('O', w/2 + 8, h/2 + 14);
+      // radius line
+      ctx.strokeStyle = '#FF9500'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(w/2, h/2); ctx.lineTo(w/2 + Math.min(w,h)*0.35, h/2); ctx.stroke();
+      ctx.setLineDash([]);
+      break;
+    }
+    case 'sector': {
+      const r = parseFloat(document.getElementById('geo_r').value) || 0;
+      const deg = parseFloat(document.getElementById('geo_deg').value) || 0;
+      if (r <= 0) { out.innerHTML = '<div class="text-secondary">请输入有效半径</div>'; return; }
+      const rad = toRad(deg);
+      const L = r * rad;
+      const area = 0.5 * r * r * rad;
+      const chord = 2 * r * Math.sin(rad/2);
+      const perim = 2 * r + L;
+      result = `<div class="output-item"><span class="output-label">弧长 L</span><span class="output-value">${formatNum(L,6)}</span></div>
+                <div class="output-item"><span class="output-label">扇形面积</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">弦长</span><span class="output-value">${formatNum(chord,6)}</span></div>
+                <div class="output-item"><span class="output-label">扇形周长</span><span class="output-value">${formatNum(perim,6)}</span></div>`;
+      // Draw sector
+      const cx = w/2 - 20, cy = h/2 + 10;
+      const sc = Math.min(w,h)*0.3;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, sc, -toRad(deg), 0); ctx.closePath(); ctx.stroke();
+      ctx.fillStyle = 'rgba(0,122,255,0.08)';
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, sc, -toRad(deg), 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#1C1C1E'; ctx.beginPath(); ctx.arc(cx, cy, 2, 0, 2*Math.PI); ctx.fill();
+      ctx.fillText('O', cx+8, cy+14);
+      break;
+    }
+    case 'triangle': {
+      const a = parseFloat(document.getElementById('geo_a').value) || 0;
+      const b = parseFloat(document.getElementById('geo_b').value) || 0;
+      const c = parseFloat(document.getElementById('geo_c').value) || 0;
+      if (a+b<=c || a+c<=b || b+c<=a || a<=0 || b<=0 || c<=0) {
+        result = '<div class="text-secondary" style="color:var(--danger)">无法构成三角形！</div>'; break;
+      }
+      const s = (a+b+c)/2;
+      const area = Math.sqrt(s*(s-a)*(s-b)*(s-c));
+      const perim = a+b+c;
+      result = `<div class="output-item"><span class="output-label">面积（海伦公式）</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">半周长 s</span><span class="output-value">${formatNum(s,6)}</span></div>
+                <div class="output-item"><span class="output-label">周长</span><span class="output-value">${formatNum(perim,6)}</span></div>`;
+      // Draw triangle
+      const sc = Math.min(w,h) * 0.35;
+      const angles = [0,0,0];
+      angles[0] = Math.acos((b*b + c*c - a*a)/(2*b*c));
+      angles[1] = Math.acos((a*a + c*c - b*b)/(2*a*c));
+      angles[2] = Math.acos((a*a + b*b - c*c)/(2*a*b));
+      const p0 = {x: w/2 - sc*0.7, y: h/2 + sc*0.4};
+      const p1 = {x: w/2 + sc*0.7, y: h/2 + sc*0.4};
+      const p2 = {x: w/2, y: h/2 - sc*0.5};
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.closePath(); ctx.stroke();
+      ctx.fillStyle = '#1C1C1E';
+      [[p0.x-16,p0.y+18,'a='+formatNum(a,1)],[p1.x+6,p1.y+18,'b='+formatNum(b,1)],[p2.x-8,p2.y-10,'c='+formatNum(c,1)]].forEach(([x,y,t])=>{
+        ctx.fillStyle = '#8E8E93'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(t, x, y);
+      });
+      [[p0.x-6,p0.y+6,'A'],[p1.x+6,p1.y+6,'B'],[p2.x-4,p2.y-6,'C']].forEach(([x,y,t])=>{
+        ctx.fillStyle = '#1C1C1E'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(t, x, y);
+      });
+      break;
+    }
+    case 'rectangle': {
+      const L = parseFloat(document.getElementById('geo_L').value) || 0;
+      const W = parseFloat(document.getElementById('geo_W').value) || 0;
+      if (L<=0 || W<=0) { result = '<div class="text-secondary">请输入有效边长</div>'; break; }
+      const area = L * W;
+      const perim = 2*(L+W);
+      const diag = Math.sqrt(L*L + W*W);
+      result = `<div class="output-item"><span class="output-label">面积 S</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">周长 C</span><span class="output-value">${formatNum(perim,6)}</span></div>
+                <div class="output-item"><span class="output-label">对角线 d</span><span class="output-value">${formatNum(diag,6)}</span></div>`;
+      // Draw rect
+      const sc2 = Math.min(w,h)*0.3;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.strokeRect(w/2 - sc2/2, h/2 - sc2/2*W/L, sc2, sc2*W/L);
+      ctx.fillStyle = '#1C1C1E'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('L='+formatNum(L,2), w/2, h/2 + sc2*W/L*0.5 + 18);
+      ctx.fillText('W='+formatNum(W,2), w/2 + sc2/2 + 20, h/2 + 4);
+      break;
+    }
+    case 'square': {
+      const a = parseFloat(document.getElementById('geo_a').value) || 0;
+      if (a<=0) { result = '<div class="text-secondary">请输入有效边长</div>'; break; }
+      const area = a*a;
+      const perim = 4*a;
+      const diag = a * Math.sqrt(2);
+      result = `<div class="output-item"><span class="output-label">面积 S</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">周长 C</span><span class="output-value">${formatNum(perim,6)}</span></div>
+                <div class="output-item"><span class="output-label">对角线 d = a√2</span><span class="output-value">${formatNum(diag,6)}</span></div>`;
+      // Draw square
+      const sc3 = Math.min(w,h)*0.3;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.strokeRect(w/2 - sc3/2, h/2 - sc3/2, sc3, sc3);
+      ctx.fillStyle = '#1C1C1E'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('a='+formatNum(a,2), w/2, h/2 + sc3/2 + 18);
+      break;
+    }
+    case 'trapezoid': {
+      const a = parseFloat(document.getElementById('geo_a').value) || 0;
+      const b = parseFloat(document.getElementById('geo_b').value) || 0;
+      const h = parseFloat(document.getElementById('geo_h').value) || 0;
+      if (a<=0||b<=0||h<=0) { result = '<div class="text-secondary">请输入有效值</div>'; break; }
+      const area = (a+b)*h/2;
+      const leg = Math.sqrt(((b-a)/2)*((b-a)/2) + h*h);
+      result = `<div class="output-item"><span class="output-label">面积 S</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">腰长（等腰）</span><span class="output-value">${formatNum(leg,6)}</span></div>`;
+      // Draw trapezoid
+      const sc4 = Math.min(w,h)*0.3;
+      const topW = a/b * sc4;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w/2 - sc4/2, h/2 + sc4/2);
+      ctx.lineTo(w/2 + sc4/2, h/2 + sc4/2);
+      ctx.lineTo(w/2 + topW/2, h/2 - sc4/2);
+      ctx.lineTo(w/2 - topW/2, h/2 - sc4/2);
+      ctx.closePath(); ctx.stroke();
+      break;
+    }
+    case 'parallelogram': {
+      const a = parseFloat(document.getElementById('geo_a').value) || 0;
+      const h = parseFloat(document.getElementById('geo_h').value) || 0;
+      const b = parseFloat(document.getElementById('geo_b').value) || 0;
+      if (a<=0||h<=0||b<=0) { result = '<div class="text-secondary">请输入有效值</div>'; break; }
+      const area = a * h;
+      const perim = 2*(a+b);
+      result = `<div class="output-item"><span class="output-label">面积 S = a×h</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">周长 C = 2(a+b)</span><span class="output-value">${formatNum(perim,6)}</span></div>`;
+      // Draw parallelogram
+      const sc5 = Math.min(w,h)*0.3;
+      const off = sc5*0.2;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w/2 - sc5/2 + off, h/2 + sc5/2);
+      ctx.lineTo(w/2 + sc5/2 + off, h/2 + sc5/2);
+      ctx.lineTo(w/2 + sc5/2, h/2 - sc5/2);
+      ctx.lineTo(w/2 - sc5/2, h/2 - sc5/2);
+      ctx.closePath(); ctx.stroke();
+      break;
+    }
+    case 'sphere': {
+      const r = parseFloat(document.getElementById('geo_r').value) || 0;
+      if (r<=0) { result = '<div class="text-secondary">请输入有效半径</div>'; break; }
+      const V = 4*Math.PI*r*r*r/3;
+      const S = 4*Math.PI*r*r;
+      result = `<div class="output-item"><span class="output-label">体积 V = 4πr³/3</span><span class="output-value">${formatNum(V,6)}</span></div>
+                <div class="output-item"><span class="output-label">表面积 S = 4πr²</span><span class="output-value">${formatNum(S,6)}</span></div>`;
+      // Draw circle with 3D hint
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(w/2, h/2, Math.min(w,h)*0.3, 0, 2*Math.PI); ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,122,255,0.3)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.ellipse(w/2, h/2, Math.min(w,h)*0.3, Math.min(w,h)*0.08, 0, 0, 2*Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#1C1C1E'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('r='+formatNum(r,2), w/2 + Math.min(w,h)*0.3 + 16, h/2 + 4);
+      break;
+    }
+    case 'cylinder': {
+      const r = parseFloat(document.getElementById('geo_r').value) || 0;
+      const h = parseFloat(document.getElementById('geo_h').value) || 0;
+      if (r<=0||h<=0) { result = '<div class="text-secondary">请输入有效值</div>'; break; }
+      const V = Math.PI*r*r*h;
+      const Sside = 2*Math.PI*r*h;
+      const Stotal = 2*Math.PI*r*r + 2*Math.PI*r*h;
+      result = `<div class="output-item"><span class="output-label">体积 V = πr²h</span><span class="output-value">${formatNum(V,6)}</span></div>
+                <div class="output-item"><span class="output-label">侧面积 S侧 = 2πrh</span><span class="output-value">${formatNum(Sside,6)}</span></div>
+                <div class="output-item"><span class="output-label">全面积 S全</span><span class="output-value">${formatNum(Stotal,6)}</span></div>`;
+      // Draw cylinder
+      const cx = w/2, cy = h/2;
+      const rr = Math.min(w,h)*0.25;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(cx, cy - rr*0.6, rr, rr*0.3, 0, 0, Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, cy + rr*0.6, rr, rr*0.3, 0, 0, 2*Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - rr, cy - rr*0.6); ctx.lineTo(cx - rr, cy + rr*0.6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + rr, cy - rr*0.6); ctx.lineTo(cx + rr, cy + rr*0.6); ctx.stroke();
+      break;
+    }
+    case 'cone': {
+      const r = parseFloat(document.getElementById('geo_r').value) || 0;
+      const h = parseFloat(document.getElementById('geo_h').value) || 0;
+      if (r<=0||h<=0) { result = '<div class="text-secondary">请输入有效值</div>'; break; }
+      const l = Math.sqrt(r*r + h*h);
+      const V = Math.PI*r*r*h/3;
+      const Sside = Math.PI*r*l;
+      const Stotal = Math.PI*r*r + Math.PI*r*l;
+      result = `<div class="output-item"><span class="output-label">母线长 l = √(r²+h²)</span><span class="output-value">${formatNum(l,6)}</span></div>
+                <div class="output-item"><span class="output-label">体积 V = πr²h/3</span><span class="output-value">${formatNum(V,6)}</span></div>
+                <div class="output-item"><span class="output-label">侧面积 S侧 = πrl</span><span class="output-value">${formatNum(Sside,6)}</span></div>
+                <div class="output-item"><span class="output-label">全面积 S全</span><span class="output-value">${formatNum(Stotal,6)}</span></div>`;
+      // Draw cone
+      const cx2 = w/2, cy2 = h/2 - 10;
+      const rr2 = Math.min(w,h)*0.25;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(cx2, cy2 + rr2*0.5, rr2, rr2*0.3, 0, 0, 2*Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx2 - rr2, cy2 + rr2*0.5); ctx.lineTo(cx2, cy2 - rr2*0.8); ctx.lineTo(cx2 + rr2, cy2 + rr2*0.5); ctx.stroke();
+      break;
+    }
+    case 'ring': {
+      const R = parseFloat(document.getElementById('geo_R').value) || 0;
+      const r = parseFloat(document.getElementById('geo_r').value) || 0;
+      if (R<=r || r<=0) { result = '<div class="text-secondary">请输入有效半径（R > r > 0）</div>'; break; }
+      const area = Math.PI*(R*R - r*r);
+      const outerC = 2*Math.PI*R;
+      const innerC = 2*Math.PI*r;
+      result = `<div class="output-item"><span class="output-label">面积 S = π(R²−r²)</span><span class="output-value">${formatNum(area,6)}</span></div>
+                <div class="output-item"><span class="output-label">外周长 = 2πR</span><span class="output-value">${formatNum(outerC,6)}</span></div>
+                <div class="output-item"><span class="output-label">内周长 = 2πr</span><span class="output-value">${formatNum(innerC,6)}</span></div>`;
+      // Draw ring
+      const cx3 = w/2, cy3 = h/2;
+      const scR = Math.min(w,h)*0.35;
+      const scr = scR * r/R;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx3, cy3, scR, 0, 2*Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx3, cy3, scr, 0, 2*Math.PI); ctx.stroke();
+      ctx.fillStyle = 'rgba(0,122,255,0.08)';
+      ctx.beginPath(); ctx.arc(cx3, cy3, scR, 0, 2*Math.PI); ctx.arc(cx3, cy3, scr, 0, 2*Math.PI, true); ctx.fill();
+      ctx.fillStyle = '#1C1C1E'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('R='+formatNum(R,2), cx3 + scR + 14, cy3 + 4);
+      ctx.fillText('r='+formatNum(r,2), cx3 + scr + 8, cy3 + 18);
+      break;
+    }
+  }
+  out.innerHTML = result;
+}
+
+// ===== Bind Calc Events =====
+function bindCalcEvents() {
+  // Auto-trigger initial calculations
+  setTimeout(() => {
+    if (document.getElementById('xy2p_x')) calcXY2Polar();
+    if (document.getElementById('p2xy_r')) calcPolar2XY();
+    if (document.getElementById('trigVal')) calcTrig();
+    if (document.getElementById('tri_a')) calcTriangle();
+    if (document.getElementById('a2r_deg')) angleToRadian();
+    if (document.getElementById('arc_r')) calcArcSector();
+    if (document.getElementById('shapeSelect')) renderShapeInputs();
+  }, 50);
+}
+
+// ==========================================
+// ===== Canvas System =====
+// ==========================================
+let canvasEl, ctx, canvasW, canvasH, dpr;
+
+function initCanvas() {
+  canvasEl = document.getElementById('mainCanvas');
+  ctx = canvasEl.getContext('2d');
+  resizeCanvas();
+  renderCanvas();
+  setupCanvasEvents();
+}
+
+function resizeCanvas() {
+  const wrapper = document.getElementById('canvasWrapper');
+  dpr = window.devicePixelRatio || 1;
+  const rect = wrapper.getBoundingClientRect();
+  canvasW = rect.width;
+  canvasH = rect.height;
+  canvasEl.width = canvasW * dpr;
+  canvasEl.height = canvasH * dpr;
+  canvasEl.style.width = canvasW + 'px';
+  canvasEl.style.height = canvasH + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+
+function worldToScreen(wx, wy) {
+  const sx = wx * AppState.canvasScale + AppState.canvasOffset.x;
+  const sy = -wy * AppState.canvasScale + AppState.canvasOffset.y;
+  return { x: sx, y: sy };
+}
+
+function screenToWorld(sx, sy) {
+  const wx = (sx - AppState.canvasOffset.x) / AppState.canvasScale;
+  const wy = -(sy - AppState.canvasOffset.y) / AppState.canvasScale;
+  return { x: wx, y: wy };
+}
+
+function renderCanvas() {
+  if (!ctx) return;
+  const w = canvasW, h = canvasH;
+  ctx.clearRect(0, 0, w, h);
+  
+  // Background
+  ctx.fillStyle = '#FAFAFA';
+  ctx.fillRect(0, 0, w, h);
+
+  const scale = AppState.canvasScale;
+  const offset = AppState.canvasOffset;
+
+  // Grid
+  let gridStep = 1;
+  const targetGridPixels = 60;
+  const worldTarget = targetGridPixels / scale;
+  const gridSteps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+  for (let i = 0; i < gridSteps.length; i++) {
+    if (worldTarget <= gridSteps[i] * 1.5) { gridStep = gridSteps[i]; break; }
+  }
+  if (gridStep === 0) gridStep = 1;
+
+  const topLeft = screenToWorld(0, 0);
+  const bottomRight = screenToWorld(w, h);
+  const startX = Math.floor(topLeft.x / gridStep) * gridStep;
+  const endX = Math.ceil(bottomRight.x / gridStep) * gridStep;
+  const startY = Math.floor(bottomRight.y / gridStep) * gridStep;
+  const endY = Math.ceil(topLeft.y / gridStep) * gridStep;
+
+  ctx.strokeStyle = '#E0E0E5';
+  ctx.lineWidth = 0.5;
+  
+  // Vertical grid lines
+  for (let x = startX; x <= endX; x += gridStep) {
+    const sp = worldToScreen(x, 0);
+    ctx.beginPath();
+    ctx.moveTo(sp.x, 0);
+    ctx.lineTo(sp.x, h);
+    ctx.stroke();
+  }
+  // Horizontal grid lines
+  for (let y = startY; y <= endY; y += gridStep) {
+    const sp = worldToScreen(0, y);
+    ctx.beginPath();
+    ctx.moveTo(0, sp.y);
+    ctx.lineTo(w, sp.y);
+    ctx.stroke();
+  }
+
+  // Axes
+  const origin = worldToScreen(0, 0);
+  ctx.strokeStyle = '#8E8E93';
+  ctx.lineWidth = 2;
+  // X axis
+  ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(w, origin.y); ctx.stroke();
+  // Y axis
+  ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, h); ctx.stroke();
+
+  // Arrows
+  ctx.fillStyle = '#8E8E93';
+  ctx.beginPath(); ctx.moveTo(w-8, origin.y); ctx.lineTo(w-14, origin.y-4); ctx.lineTo(w-14, origin.y+4); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(origin.x, 8); ctx.lineTo(origin.x-4, 14); ctx.lineTo(origin.x+4, 14); ctx.fill();
+
+  // Axis labels
+  ctx.fillStyle = '#8E8E93'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('X', w-14, origin.y-6);
+  ctx.fillText('Y', origin.x+10, 16);
+
+  // Tick labels
+  ctx.fillStyle = '#A0A0A5'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  const stepPixels = gridStep * scale;
+  if (stepPixels > 25) {
+    for (let x = startX; x <= endX; x += gridStep) {
+      if (Math.abs(x) < 0.0001) continue;
+      const sp = worldToScreen(x, 0);
+      ctx.fillText(formatCoord(x), sp.x, origin.y + 14);
+    }
+    for (let y = startY; y <= endY; y += gridStep) {
+      if (Math.abs(y) < 0.0001) continue;
+      const sp = worldToScreen(0, y);
+      ctx.fillText(formatCoord(y), origin.x - 14, sp.y + 4);
+    }
+  }
+
+  // Draw canvas elements
+  const visibleIds = AppState.canvasElements;
+  const elements = AppState.elements.filter(e => visibleIds.includes(e.id) && e.visible);
+  
+  elements.forEach(el => {
+    drawCanvasElement(el);
+  });
+
+  // Update info
+  const center = screenToWorld(w/2, h/2);
+  document.getElementById('canvasInfo').textContent = 
+    `坐标: (${formatCoord(center.x)}, ${formatCoord(center.y)}) | ${formatNum(scale, 2)}x`;
+}
+
+function drawCanvasElement(el) {
+  const w = canvasW, h = canvasH;
+  const color = el.color || '#007AFF';
+  
+  switch(el.type) {
+    case 'point': {
+      const [x, y] = el.params;
+      const sp = worldToScreen(x, y);
+      // Cross
+      ctx.strokeStyle = color; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sp.x-8, sp.y); ctx.lineTo(sp.x+8, sp.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sp.x, sp.y-8); ctx.lineTo(sp.x, sp.y+8); ctx.stroke();
+      // Dot
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(sp.x, sp.y, 4, 0, 2*Math.PI); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sp.x, sp.y, 4, 0, 2*Math.PI); ctx.stroke();
+      // Label
+      ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(el.name || 'P', sp.x + 8, sp.y - 4);
+      ctx.fillStyle = '#8E8E93'; ctx.font = '10px sans-serif';
+      ctx.fillText(`(${formatCoord(x)},${formatCoord(y)})`, sp.x + 8, sp.y + 12);
+      break;
+    }
+    case 'line': {
+      const [x1, y1, x2, y2] = el.params;
+      const sp1 = worldToScreen(x1, y1);
+      const sp2 = worldToScreen(x2, y2);
+      // Line
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(sp1.x, sp1.y); ctx.lineTo(sp2.x, sp2.y); ctx.stroke();
+      // Endpoints
+      ctx.fillStyle = color;
+      [[sp1.x, sp1.y], [sp2.x, sp2.y]].forEach(([px, py]) => {
+        ctx.beginPath(); ctx.arc(px, py, 3, 0, 2*Math.PI); ctx.fill();
+      });
+      // Midpoint cross
+      const mx = (sp1.x+sp2.x)/2, my = (sp1.y+sp2.y)/2;
+      ctx.strokeStyle = '#8E8E93'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(mx-5, my); ctx.lineTo(mx+5, my); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mx, my-5); ctx.lineTo(mx, my+5); ctx.stroke();
+      // Label
+      ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(el.name || 'L', mx, my - 10);
+      break;
+    }
+    case 'circle': {
+      const [cx, cy, r] = el.params;
+      const sp = worldToScreen(cx, cy);
+      const sr = r * AppState.canvasScale;
+      // Circle
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sp.x, sp.y, sr, 0, 2*Math.PI); ctx.stroke();
+      // Center cross (red)
+      ctx.strokeStyle = '#FF3B30'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(sp.x-6, sp.y); ctx.lineTo(sp.x+6, sp.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sp.x, sp.y-6); ctx.lineTo(sp.x, sp.y+6); ctx.stroke();
+      // Label
+      ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(el.name || 'C', sp.x + 10, sp.y - 6);
+      ctx.fillStyle = '#8E8E93'; ctx.font = '10px sans-serif';
+      ctx.fillText(`O(${formatCoord(cx)},${formatCoord(cy)})`, sp.x + 10, sp.y + 10);
+      ctx.fillText(`r=${formatCoord(r)}`, sp.x + 10, sp.y + 24);
+      break;
+    }
+    case 'arc': {
+      const [cx, cy, r, startAng, endAng] = el.params;
+      const sp = worldToScreen(cx, cy);
+      const sr = r * AppState.canvasScale;
+      const sa = -toRad(startAng);
+      const ea = -toRad(endAng);
+      // Arc
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sp.x, sp.y, sr, sa, ea); ctx.stroke();
+      // Center cross (red)
+      ctx.strokeStyle = '#FF3B30'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(sp.x-6, sp.y); ctx.lineTo(sp.x+6, sp.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sp.x, sp.y-6); ctx.lineTo(sp.x, sp.y+6); ctx.stroke();
+      // Label
+      ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(el.name || 'Arc', sp.x + 10, sp.y - 6);
+      ctx.fillStyle = '#8E8E93'; ctx.font = '10px sans-serif';
+      ctx.fillText(`O(${formatCoord(cx)},${formatCoord(cy)})`, sp.x + 10, sp.y + 10);
+      break;
+    }
+    case 'rect': {
+      const [rx, ry, rw, rh] = el.params;
+      const spBL = worldToScreen(rx, ry);
+      const spTR = worldToScreen(rx + rw, ry + rh);
+      const spW = spTR.x - spBL.x;
+      const spH = spTR.y - spBL.y;
+      // Rectangle
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.strokeRect(spBL.x, spBL.y, spW, spH);
+      // Center cross (blue)
+      const cx2 = (spBL.x + spTR.x) / 2;
+      const cy2 = (spBL.y + spTR.y) / 2;
+      ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(cx2-6, cy2); ctx.lineTo(cx2+6, cy2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx2, cy2-6); ctx.lineTo(cx2, cy2+6); ctx.stroke();
+      // Label
+      ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(el.name || 'Rect', cx2 + 10, cy2 - 4);
+      ctx.fillStyle = '#8E8E93'; ctx.font = '10px sans-serif';
+      ctx.fillText(`C(${formatCoord(rx+rw/2)},${formatCoord(ry+rh/2)})`, cx2 + 10, cy2 + 12);
+      break;
+    }
+  }
+}
+
+// ===== Canvas Events =====
+function setupCanvasEvents() {
+  canvasEl.addEventListener('pointerdown', onPointerDown);
+  canvasEl.addEventListener('pointermove', onPointerMove);
+  canvasEl.addEventListener('pointerup', onPointerUp);
+  canvasEl.addEventListener('pointerleave', onPointerUp);
+  canvasEl.addEventListener('wheel', onWheel, { passive: false });
+  
+  // Touch for pinch
+  canvasEl.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvasEl.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvasEl.addEventListener('touchend', onTouchEnd, { passive: false });
+}
+
+let activePointers = {};
+
+function onPointerDown(e) {
+  const rect = canvasEl.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  AppState.isDragging = true;
+  AppState.dragStart = { x, y };
+  AppState.offsetStart = { ...AppState.canvasOffset };
+  canvasEl.setPointerCapture(e.pointerId);
+}
+
+function onPointerMove(e) {
+  if (!AppState.isDragging) return;
+  const rect = canvasEl.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const dx = x - AppState.dragStart.x;
+  const dy = y - AppState.dragStart.y;
+  AppState.canvasOffset.x = AppState.offsetStart.x + dx;
+  AppState.canvasOffset.y = AppState.offsetStart.y + dy;
+  renderCanvas();
+}
+
+function onPointerUp(e) {
+  AppState.isDragging = false;
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  const rect = canvasEl.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  zoomAtPoint(mx, my, delta);
+}
+
+function onTouchStart(e) {
+  if (e.touches.length === 2) {
+    AppState.isPinching = true;
+    const t1 = e.touches[0], t2 = e.touches[1];
+    AppState.lastDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const rect = canvasEl.getBoundingClientRect();
+    AppState.pinchCenter = {
+      x: (t1.clientX + t2.clientX) / 2 - rect.left,
+      y: (t1.clientY + t2.clientY) / 2 - rect.top
+    };
+    AppState.offsetStart = { ...AppState.canvasOffset };
+    AppState.scaleStart = AppState.canvasScale;
+  }
+}
+
+function onTouchMove(e) {
+  if (e.touches.length === 2 && AppState.isPinching) {
+    e.preventDefault();
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const scale = dist / AppState.lastDist;
+    const newScale = clamp(AppState.scaleStart * scale, 0.01, 100);
+    // Zoom at pinch center
+    const pc = AppState.pinchCenter;
+    const world = screenToWorld(pc.x, pc.y);
+    AppState.canvasScale = newScale;
+    const newScreen = worldToScreen(world.x, world.y);
+    AppState.canvasOffset.x += pc.x - newScreen.x;
+    AppState.canvasOffset.y += pc.y - newScreen.y;
+    AppState.lastDist = dist;
+    renderCanvas();
+  }
+}
+
+function onTouchEnd(e) {
+  if (e.touches.length < 2) {
+    AppState.isPinching = false;
+  }
+}
+
+function zoomAtPoint(mx, my, factor) {
+  const world = screenToWorld(mx, my);
+  AppState.canvasScale = clamp(AppState.canvasScale * factor, 0.01, 100);
+  const newScreen = worldToScreen(world.x, world.y);
+  AppState.canvasOffset.x += mx - newScreen.x;
+  AppState.canvasOffset.y += my - newScreen.y;
+  renderCanvas();
+}
+
+// Canvas toolbar
+document.getElementById('btnFitView').addEventListener('click', () => {
+  AppState.canvasOffset = { x: canvasW/2, y: canvasH/2 };
+  AppState.canvasScale = 1;
+  renderCanvas();
+});
+
+document.getElementById('btnZoomIn').addEventListener('click', () => {
+  zoomAtPoint(canvasW/2, canvasH/2, 1.25);
+});
+
+document.getElementById('btnZoomOut').addEventListener('click', () => {
+  zoomAtPoint(canvasW/2, canvasH/2, 0.8);
+});
+
+document.getElementById('btnClearCanvas').addEventListener('click', () => {
+  if (AppState.canvasElements.length === 0) { showToast('画布已经是空的'); return; }
+  if (!confirm('确定清空画布上的所有元素？（数据中心中的元素不受影响）')) return;
+  AppState.canvasElements = [];
+  renderCanvas();
+  renderDataCenter();
+  showToast('画布已清空');
+});
+
+// Add element button
+document.getElementById('btnAddElement').addEventListener('click', () => {
+  showAddElementModal();
+});
+
+// ===== Add Element Modal =====
+function showAddElementModal(el = null) {
+  const isEdit = el !== null;
+  const type = el ? el.type : 'point';
+  const title = isEdit ? '编辑元素' : '添加元素';
+  const types = ['point','line','circle','arc','rect'];
+  const typeNames = {point:'点',line:'线',circle:'圆',arc:'圆弧',rect:'矩形'};
+  let typeOpts = types.map(t => `<option value="${t}" ${t===type?'selected':''}>${typeNames[t]}</option>`).join('');
+  
+  let paramsHTML = '';
+  const def = (idx, d) => el ? (el.params[idx] !== undefined ? el.params[idx] : d) : d;
+  switch(type) {
+    case 'point':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>X</label><input type="number" id="add_x" step="any" value="${def(0,0)}"></div><div class="input-group"><label>Y</label><input type="number" id="add_y" step="any" value="${def(1,0)}"></div></div>`;
+      break;
+    case 'line':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>起点 X</label><input type="number" id="add_x1" step="any" value="${def(0,0)}"></div><div class="input-group"><label>起点 Y</label><input type="number" id="add_y1" step="any" value="${def(1,0)}"></div></div><div class="input-row"><div class="input-group"><label>终点 X</label><input type="number" id="add_x2" step="any" value="${def(2,1)}"></div><div class="input-group"><label>终点 Y</label><input type="number" id="add_y2" step="any" value="${def(3,1)}"></div></div>`;
+      break;
+    case 'circle':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>圆心 X</label><input type="number" id="add_cx" step="any" value="${def(0,0)}"></div><div class="input-group"><label>圆心 Y</label><input type="number" id="add_cy" step="any" value="${def(1,0)}"></div><div class="input-group"><label>半径</label><input type="number" id="add_r" step="any" value="${def(2,1)}"></div></div>`;
+      break;
+    case 'arc':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>圆心 X</label><input type="number" id="add_cx" step="any" value="${def(0,0)}"></div><div class="input-group"><label>圆心 Y</label><input type="number" id="add_cy" step="any" value="${def(1,0)}"></div></div><div class="input-row"><div class="input-group"><label>半径</label><input type="number" id="add_r" step="any" value="${def(2,1)}"></div><div class="input-group"><label>起始角度°</label><input type="number" id="add_sa" step="any" value="${def(3,0)}"></div><div class="input-group"><label>终止角度°</label><input type="number" id="add_ea" step="any" value="${def(4,90)}"></div></div>`;
+      break;
+    case 'rect':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>左下角 X</label><input type="number" id="add_rx" step="any" value="${def(0,0)}"></div><div class="input-group"><label>左下角 Y</label><input type="number" id="add_ry" step="any" value="${def(1,0)}"></div></div><div class="input-row"><div class="input-group"><label>宽度</label><input type="number" id="add_rw" step="any" value="${def(2,2)}"></div><div class="input-group"><label>高度</label><input type="number" id="add_rh" step="any" value="${def(3,1)}"></div></div>`;
+      break;
+  }
+
+  const colorDots = COLORS.map((c, i) => {
+    const sel = (el && el.color === c) || (!el && i === 0) ? 'active' : '';
+    return `<div class="color-dot ${sel}" data-color="${c}" style="background:${c}" onclick="selectColor(this, '${c}')"></div>`;
+  }).join('');
+
+  const body = `
+    <div class="input-group">
+      <label>元素类型</label>
+      <select id="addType" onchange="onAddTypeChange()">${typeOpts}</select>
+    </div>
+    <div id="addParams">${paramsHTML}</div>
+    <div class="input-group">
+      <label>名称</label>
+      <input type="text" id="addName" value="${isEdit ? el.name : ''}" placeholder="自动生成">
+    </div>
+    <div class="input-group">
+      <label>颜色</label>
+      <div class="color-picker" id="colorPicker">${colorDots}</div>
+    </div>
+    <input type="hidden" id="selectedColor" value="${el ? el.color : COLORS[0]}">
+    <button class="btn btn-primary btn-block mt-8" onclick="confirmAddElement('${isEdit ? el.id : ''}')">${isEdit ? '保存修改' : '添加元素'}</button>
+  `;
+
+  openModal(title, body, false);
+
+  // Store reference for edit
+  if (isEdit) {
+    document.getElementById('modalSheet').dataset.editId = el.id;
+  }
+}
+
+window.onAddTypeChange = function() {
+  // Re-render params
+  const type = document.getElementById('addType').value;
+  const editId = document.getElementById('modalSheet').dataset.editId;
+  const el = editId ? getElementById(parseInt(editId)) : null;
+  const isEdit = !!el;
+  const def = (idx, d) => el ? (el.params[idx] !== undefined ? el.params[idx] : d) : d;
+  let paramsHTML = '';
+  switch(type) {
+    case 'point':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>X</label><input type="number" id="add_x" step="any" value="${def(0,0)}"></div><div class="input-group"><label>Y</label><input type="number" id="add_y" step="any" value="${def(1,0)}"></div></div>`;
+      break;
+    case 'line':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>起点 X</label><input type="number" id="add_x1" step="any" value="${def(0,0)}"></div><div class="input-group"><label>起点 Y</label><input type="number" id="add_y1" step="any" value="${def(1,0)}"></div></div><div class="input-row"><div class="input-group"><label>终点 X</label><input type="number" id="add_x2" step="any" value="${def(2,1)}"></div><div class="input-group"><label>终点 Y</label><input type="number" id="add_y2" step="any" value="${def(3,1)}"></div></div>`;
+      break;
+    case 'circle':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>圆心 X</label><input type="number" id="add_cx" step="any" value="${def(0,0)}"></div><div class="input-group"><label>圆心 Y</label><input type="number" id="add_cy" step="any" value="${def(1,0)}"></div><div class="input-group"><label>半径</label><input type="number" id="add_r" step="any" value="${def(2,1)}"></div></div>`;
+      break;
+    case 'arc':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>圆心 X</label><input type="number" id="add_cx" step="any" value="${def(0,0)}"></div><div class="input-group"><label>圆心 Y</label><input type="number" id="add_cy" step="any" value="${def(1,0)}"></div></div><div class="input-row"><div class="input-group"><label>半径</label><input type="number" id="add_r" step="any" value="${def(2,1)}"></div><div class="input-group"><label>起始角度°</label><input type="number" id="add_sa" step="any" value="${def(3,0)}"></div><div class="input-group"><label>终止角度°</label><input type="number" id="add_ea" step="any" value="${def(4,90)}"></div></div>`;
+      break;
+    case 'rect':
+      paramsHTML = `<div class="input-row"><div class="input-group"><label>左下角 X</label><input type="number" id="add_rx" step="any" value="${def(0,0)}"></div><div class="input-group"><label>左下角 Y</label><input type="number" id="add_ry" step="any" value="${def(1,0)}"></div></div><div class="input-row"><div class="input-group"><label>宽度</label><input type="number" id="add_rw" step="any" value="${def(2,2)}"></div><div class="input-group"><label>高度</label><input type="number" id="add_rh" step="any" value="${def(3,1)}"></div></div>`;
+      break;
+  }
+  document.getElementById('addParams').innerHTML = paramsHTML;
+};
+
+window.selectColor = function(el, color) {
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('selectedColor').value = color;
+};
+
+window.confirmAddElement = function(editId) {
+  const type = document.getElementById('addType').value;
+  const name = document.getElementById('addName').value.trim();
+  const color = document.getElementById('selectedColor').value;
+  let params = [];
+  switch(type) {
+    case 'point':
+      params = [
+        parseFloat(document.getElementById('add_x').value) || 0,
+        parseFloat(document.getElementById('add_y').value) || 0
+      ];
+      break;
+    case 'line':
+      params = [
+        parseFloat(document.getElementById('add_x1').value) || 0,
+        parseFloat(document.getElementById('add_y1').value) || 0,
+        parseFloat(document.getElementById('add_x2').value) || 0,
+        parseFloat(document.getElementById('add_y2').value) || 0
+      ];
+      break;
+    case 'circle':
+      params = [
+        parseFloat(document.getElementById('add_cx').value) || 0,
+        parseFloat(document.getElementById('add_cy').value) || 0,
+        parseFloat(document.getElementById('add_r').value) || 1
+      ];
+      break;
+    case 'arc':
+      params = [
+        parseFloat(document.getElementById('add_cx').value) || 0,
+        parseFloat(document.getElementById('add_cy').value) || 0,
+        parseFloat(document.getElementById('add_r').value) || 1,
+        parseFloat(document.getElementById('add_sa').value) || 0,
+        parseFloat(document.getElementById('add_ea').value) || 90
+      ];
+      break;
+    case 'rect':
+      params = [
+        parseFloat(document.getElementById('add_rx').value) || 0,
+        parseFloat(document.getElementById('add_ry').value) || 0,
+        parseFloat(document.getElementById('add_rw').value) || 2,
+        parseFloat(document.getElementById('add_rh').value) || 1
+      ];
+      break;
+  }
+
+  if (editId) {
+    const id = parseInt(editId);
+    const el = getElementById(id);
+    if (el) {
+      el.type = type;
+      el.params = params;
+      el.color = color;
+      if (name) el.name = name;
+    }
+    closeModal();
+    renderDataCenter();
+    renderCanvas();
+    showToast('元素已更新');
+  } else {
+    const finalName = name || (TYPE_NAMES[type] + (AppState.elements.filter(e=>e.type===type).length+1));
+    const el = addElement(type, params, finalName, color, true);
+    closeModal();
+    showToast('元素已添加');
+  }
+};
+
+// ==========================================
+// ===== Data Center =====
+// ==========================================
+function renderDataCenter() {
+  const list = document.getElementById('elementList');
+  const count = document.getElementById('elementCount');
+  const items = AppState.elements;
+  count.textContent = `共 ${items.length} 个元素`;
+
+  if (items.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📦</div><div class="text">还没有元素</div><div class="text-sm text-secondary mt-8">在画布中添加元素，或使用计算器保存结果</div></div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(el => {
+    const desc = getElementDesc(el);
+    return `
+      <div class="element-item" style="border-left-color:${el.color}">
+        <div class="element-icon">${TYPE_ICONS[el.type]}</div>
+        <div class="element-info">
+          <div class="element-name">${el.name}</div>
+          <div class="element-desc">${desc}</div>
+          <div class="element-time">${el.created}</div>
+        </div>
+        <div class="element-actions">
+          <button class="btn btn-xs btn-outline" onclick="toggleCanvasElement(${el.id})" title="添加/移除画布">${AppState.canvasElements.includes(el.id) ? '✅' : '📌'}</button>
+          <button class="btn btn-xs btn-outline" onclick="editElement(${el.id})" title="编辑">✏️</button>
+          <button class="btn btn-xs btn-danger" onclick="deleteElement(${el.id})" title="删除">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getElementDesc(el) {
+  switch(el.type) {
+    case 'point': return `(${formatCoord(el.params[0])}, ${formatCoord(el.params[1])})`;
+    case 'line': return `(${formatCoord(el.params[0])},${formatCoord(el.params[1])}) → (${formatCoord(el.params[2])},${formatCoord(el.params[3])})`;
+    case 'circle': return `圆心(${formatCoord(el.params[0])},${formatCoord(el.params[1])}) 半径=${formatCoord(el.params[2])}`;
+    case 'arc': return `圆心(${formatCoord(el.params[0])},${formatCoord(el.params[1])}) r=${formatCoord(el.params[2])} ${el.params[3]}°~${el.params[4]}°`;
+    case 'rect': return `左下(${formatCoord(el.params[0])},${formatCoord(el.params[1])}) ${el.params[2]}×${el.params[3]}`;
+    default: return '';
+  }
+}
+
+window.toggleCanvasElement = function(id) {
+  const idx = AppState.canvasElements.indexOf(id);
+  if (idx >= 0) {
+    AppState.canvasElements.splice(idx, 1);
+    showToast('已从画布移除');
+  } else {
+    AppState.canvasElements.push(id);
+    showToast('已添加到画布');
+  }
+  renderCanvas();
+  renderDataCenter();
+};
+
+window.editElement = function(id) {
+  const el = getElementById(id);
+  if (!el) return;
+  showAddElementModal(el);
+};
+
+window.deleteElement = function(id) {
+  if (!confirm('确定要删除此元素吗？')) return;
+  const idx = AppState.elements.findIndex(e => e.id === id);
+  if (idx >= 0) {
+    AppState.elements.splice(idx, 1);
+  }
+  const cidx = AppState.canvasElements.indexOf(id);
+  if (cidx >= 0) AppState.canvasElements.splice(cidx, 1);
+  renderDataCenter();
+  renderCanvas();
+  showToast('元素已删除');
+};
+
+document.getElementById('btnClearAll').addEventListener('click', () => {
+  if (AppState.elements.length === 0) { showToast('数据中心为空'); return; }
+  if (!confirm('确定清空全部数据？此操作不可撤销！')) return;
+  AppState.elements = [];
+  AppState.canvasElements = [];
+  renderDataCenter();
+  renderCanvas();
+  showToast('已清空全部数据');
+});
+
+document.getElementById('btnBatchAdd').addEventListener('click', () => {
+  if (AppState.elements.length === 0) { showToast('暂无元素可添加'); return; }
+  const notOnCanvas = AppState.elements.filter(e => !AppState.canvasElements.includes(e.id));
+  if (notOnCanvas.length === 0) { showToast('所有元素已在画布上'); return; }
+  notOnCanvas.forEach(e => AppState.canvasElements.push(e.id));
+  renderCanvas();
+  renderDataCenter();
+  showToast(`已批量添加 ${notOnCanvas.length} 个元素到画布`);
+});
+
+// ==========================================
+// ===== Init =====
+// ==========================================
+function init() {
+  // Initialize canvas
+  initCanvas();
+  
+  // Render calculator
+  renderCalcCategory();
+  
+  // Render data center
+  renderDataCenter();
+  
+  // Handle resize
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    renderCanvas();
+  });
+  
+  // Default canvas offset
+  AppState.canvasOffset = { x: canvasW/2, y: canvasH/2 };
+  AppState.canvasScale = 1;
+  renderCanvas();
+  
+  console.log('✓ 专业几何计算与绘图工具已加载');
+}
+
+// Wait for DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+</body>
+</html>
